@@ -25,6 +25,7 @@ dependencies:
 - rio
 # GUI
 - sdl2
+- sdl2-ttf
 # SDL2 functions use this as parameter
 - linear
 
@@ -42,13 +43,13 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    - -optl-static
-    - -pgml gcc "-optl-Wl,--allow-multiple-definition" "-optl-Wl,--whole-archive" "-optl-Wl,-Bstatic" "-optl-Wl,-lsdl2" "-optl-Wl,-Bdynamic" "-optl-Wl,--no-whole-archive"
-    - -optl-LC:\Program,Files,(x86)\Microsoft,Visual,Stidio\2019\Preview\VC\Tools\MSVC\14.24.28117\lib\x64
-    - -optl-lversion
-    - -optl-lole32
-    - -optl-lSetupapi
-    - -optl-lOleAut32
+    # - -optl-static
+    # - -pgml gcc "-optl-Wl,--allow-multiple-definition" "-optl-Wl,--whole-archive" "-optl-Wl,-Bstatic" "-optl-Wl,-lsdl2" "-optl-Wl,-Bdynamic" "-optl-Wl,--no-whole-archive"
+    # - -optl-LC:\Program,Files,(x86)\Microsoft,Visual,Stidio\2019\Preview\VC\Tools\MSVC\14.24.28117\lib\x64
+    # - -optl-lversion
+    # - -optl-lole32
+    # - -optl-lSetupapi
+    # - -optl-lOleAut32
     dependencies:
     - tetris-hs
 
