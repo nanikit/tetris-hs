@@ -6,18 +6,33 @@
     {
       "label": "build",
       "type": "shell",
-      "command": "stack build --fast",
+      "command": "chcp 65001; stack build --fast",
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "problemMatcher": []
+      "problemMatcher": {
+        "pattern": {
+          "regexp": "^.*?> (.*?):(\\d+):(\\d+): (.*?):",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+        },
+        "owner": "haskell",
+        "background": {
+          "beginsPattern": ".*?> build",
+          "endsPattern": "^--  While"
+        }
+      },
+      "presentation": {
+        "echo": false,
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": true,
+        "revealProblems": "never",
+      }
     },
-    {
-      "label": "run",
-      "type": "shell",
-      "command": "stack exec tetris",
-      "problemMatcher": []
-    }
   ]
 }
