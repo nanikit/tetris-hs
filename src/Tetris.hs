@@ -10,9 +10,6 @@ module Tetris
 import RIO
 import SDL as S
 import SDL.Font as F
-import Linear (V4(..))
-import Foreign.C.Types (CInt)
-import RIO.List.Partial ((!!))
 import Tetris.Render
 
 runTetris :: IO ()

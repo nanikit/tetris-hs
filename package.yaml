@@ -23,6 +23,7 @@ dependencies:
 - base
 # Prelude replacement
 - rio
+- random
 # GUI
 - sdl2
 - sdl2-ttf
