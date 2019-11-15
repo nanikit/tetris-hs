@@ -20,10 +20,6 @@
           "severity": 4,
         },
         "owner": "haskell",
-        "background": {
-          "beginsPattern": ".*?> build",
-          "endsPattern": "^--  While"
-        }
       },
       "presentation": {
         "echo": false,
