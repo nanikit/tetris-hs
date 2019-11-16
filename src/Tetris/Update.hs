@@ -8,27 +8,13 @@ module Tetris.Update
   ) where
 
 import RIO hiding (Right, Left, Down, drop)
-import qualified RIO.Vector.Boxed as V
 import RIO.List (cycle)
 import RIO.Partial (toEnum)
-import RIO.List.Partial ((!!))
 import System.Random
-import Tetris.Update.Piece
-import Tetris.Update.HalfPi
-
-data Block = Empty | Red | Orange | Yellow | Green | Blue | Navy | Purple deriving Eq
-
--- Origin is left bottom
-type Board = V.Vector (V.Vector Block)
+import Tetris.Update.Board
+import Tetris.Update.BoardPiece
 
 data PlayState = Intro | Playing | Pause | End
-
-data BoardPiece = BoardPiece
-  { kind :: Piece
-  , x :: Int
-  , y :: Int
-  , rotation :: HalfPi
-  }
 
 data TetrisState = TetrisState
   { startTime :: Int
@@ -92,27 +78,7 @@ drop = undefined
 
 hasOverlap :: Board -> BoardPiece -> Bool
 hasOverlap board piece = isOverlap where
-  blocks :: [(Int, Int)] = pieceToBlocks piece
-  isOverlap = isBlocksOverlap board blocks
-
-pieceToBlocks :: BoardPiece -> [(Int, Int)]
-pieceToBlocks BoardPiece{ kind, x, y, rotation } = blocks where
-  rotateCount :: Int = getRotation rotation
-  pieceRotations :: [[(Int, Int)]] = getRotatedBlockOffsets kind
-  rotatedPiece :: [(Int, Int)] = pieceRotations !! rotateCount
-  blocks = [(x + offsetX, y + offsetY) | (offsetX, offsetY) <- rotatedPiece]
-
-
-isBlocksOverlap :: Board -> [(Int, Int)] -> Bool
-isBlocksOverlap board blocks = isOverlap where
-  overlapCellsOrNothing :: Maybe [Block] =
-    for blocks $ \(x, y) -> do
-      inRangeRow <- board V.!? y
-      inRangeCell <- inRangeRow V.!? x
-      return inRangeCell
-  isOverlap = case overlapCellsOrNothing of
-    Nothing -> True
-    Just overlapCells -> all (== Empty) overlapCells
+  isOverlap = isBlocksOverlap board (blockXys piece)
 
 takeNextPiece :: TetrisState -> TetrisState
 takeNextPiece = generateNewPiece . fixCurrentPiece
@@ -120,12 +86,7 @@ takeNextPiece = generateNewPiece . fixCurrentPiece
 generateNewPiece :: TetrisState -> TetrisState
 generateNewPiece state@TetrisState{ seed, nextPiece, consumedPieceCount } = newState where
   (newNextPiece, newSeed) = random seed
-  newCurPiece = BoardPiece
-    { kind = nextPiece
-    , x = 5
-    , y = 17
-    , rotation = Zero
-    }
+  newCurPiece :: BoardPiece = makeBoardPiece nextPiece 5 17 Zero
   newState = state
     { curPiece = newCurPiece
     , nextPiece = newNextPiece
@@ -134,4 +95,11 @@ generateNewPiece state@TetrisState{ seed, nextPiece, consumedPieceCount } = newS
     }
   
 fixCurrentPiece :: TetrisState -> TetrisState
-fixCurrentPiece state = undefined
+fixCurrentPiece state@TetrisState{ board, score, curPiece } = newState where
+  BoardPiece{ kind, blockXys } = curPiece
+  block = getPieceBlock kind
+  (newBoard, earnedScore) = commitBlocks board block blockXys
+  newState = state
+    { score = score + earnedScore
+    , board = newBoard
+    }

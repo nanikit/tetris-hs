@@ -24,6 +24,7 @@ dependencies:
 # Prelude replacement
 - rio
 - random
+- vector
 # GUI
 - sdl2
 - sdl2-ttf
