@@ -9,10 +9,11 @@ module Tetris
 
 import RIO as R
 import System.Random
-import Tetris.Update as U
+import Tetris.Update hiding (update)
 import Tetris.Render
 import qualified SDL as S
 import qualified SDL.Font as F
+import qualified Tetris.Update as U
 
 data TetrisApp = TetrisApp
   { logFunc :: LogFunc
@@ -57,22 +58,26 @@ eventLoop = do
   event :: Maybe S.Event <- S.waitEventTimeout (1000 `quot` 10)
   case event of
     Just event -> handleEvent event
-    Nothing -> eventLoop
+    Nothing -> update Nop
   
 handleEvent :: S.Event -> RIO TetrisApp ()
 handleEvent event = case S.eventPayload event of
   S.WindowClosedEvent _ -> return ()
   S.KeyboardEvent{} -> do
-    state <- view stateL
-    app <- ask
-    tick <- S.ticks
-    let curState = state{ currentTick = tick }
-        cmd = getTetrisCommand event
-        nextState = update curState cmd
-        newApp = app{ state = nextState }
-    if cmd /= Nop then logInfo (displayShow nextState) else return ()
-    runRIO newApp eventLoop
+    let cmd = getTetrisCommand event
+    update cmd
   _ -> eventLoop
+
+update :: Command -> RIO TetrisApp()
+update cmd = do
+  state <- view stateL
+  app <- ask
+  tick <- S.ticks
+  let curState = state{ currentTick = tick }
+      nextState = U.update curState cmd
+      newApp = app{ state = nextState }
+  if cmd /= Nop then logInfo (displayShow nextState) else return ()
+  runRIO newApp eventLoop
 
 getTetrisCommand :: S.Event -> Command
 getTetrisCommand event = command where

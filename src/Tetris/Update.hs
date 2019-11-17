@@ -72,15 +72,21 @@ update prevState event = nextState where
     Right -> right
     Rotate -> rotate
     Drop -> drop
-  nextState = action prevState
+  nextState = downIfTimeout (action prevState)
+
+downIfTimeout :: TetrisState -> TetrisState
+downIfTimeout state@TetrisState{ lastDownTick, currentTick } = nextState where
+  action = if currentTick - lastDownTick > 1000 then down else id
+  nextState = action state
 
 down :: TetrisState -> TetrisState
-down prevState@TetrisState{ board, curPiece } = nextState where
+down prevState@TetrisState{ board, curPiece, currentTick } = nextState where
   downed = over y (subtract 1) curPiece 
   isTouchGround = hasOverlap board downed
-  nextState = if isTouchGround
+  pieceMoved = if isTouchGround
     then takeNextPiece prevState
     else prevState { curPiece = downed }
+  nextState = pieceMoved{ lastDownTick = currentTick }
 
 left :: TetrisState -> TetrisState
 left prevState@TetrisState{ board, curPiece } = nextState where
