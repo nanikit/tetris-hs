@@ -7,10 +7,12 @@ module Tetris.Update.Piece
   ( Piece
   , getPieceBlock
   , getRotatedBlockOffsets
+  , getPieceOffsets
   ) where
 
 import RIO
 import RIO.List (cycle)
+import RIO.List.Partial (head)
 import RIO.Partial (toEnum)
 import System.Random
 import Tetris.Update.Board (Block(..))
@@ -71,3 +73,6 @@ getRotatedBlockOffsets' J =
   , [(0,0), (0,-1), (0,1), (1,-1)]
   , [(0,0), (-1,0), (1,0), (-1,1)]
   ]
+
+getPieceOffsets :: Piece -> [(Int, Int)]
+getPieceOffsets = head . getRotatedBlockOffsets'

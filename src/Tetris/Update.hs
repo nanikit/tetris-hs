@@ -8,6 +8,9 @@ module Tetris.Update
   , update
   , Command(..)
   , TetrisState(..)
+  , Block(..)
+  , Board(..)
+  , PlayState(..)
   ) where
 
 import RIO hiding (Right, Left, Down, drop)

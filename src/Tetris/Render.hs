@@ -9,13 +9,16 @@ module Tetris.Render
   , render
   ) where
 
+import Foreign.C.Types (CInt)
+import Linear (V4(..))
 import RIO
+import RIO.List.Partial ((!!))
 import SDL as S
 import SDL.Font as F
-import Linear (V4(..))
-import Foreign.C.Types (CInt)
-import RIO.List.Partial ((!!))
 import Tetris.Update
+import Tetris.Update.Piece
+import qualified Tetris.Render.Constants as C
+import qualified RIO.Vector as V
 
 data DrawingContext = DrawingContext
   { window :: Window
@@ -49,47 +52,82 @@ initDrawingContext = do
 
 render :: TetrisState -> RIO DrawingContext ()
 render state = withBackBuffer $ do
-  DrawingContext { renderer } <- ask
-
   fillBlackAll
 
-  thickRect 20 20 300 589 3
-  thickRect 317 20 100 150 3
-  let white = V4 255 255 255 255
-  rendererDrawColor renderer $= white
-  forM_ [0..19] $ \y -> do
-    forM_ [0..9] $ \x -> do
-      let l = x * (side + gap) + 23 + gap
-          t = y * (side + gap) + 23 + gap
-          gap = 4
-          side = 25
-      fillRect renderer (Just (ltwh l t side side))
+  thickRect C.boardLeft C.boardTop C.boardWidth C.boardHeight C.borderThickness
+  thickRect
+    C.previewLeft C.previewTop C.previewWidth C.previewHeight C.borderThickness
+
+  let TetrisState{ board, nextPiece } = state
+  drawBoardBlocks board
+
+  DrawingContext { renderer } <- ask
+  drawNextPiece nextPiece
 
   -- drawHelperGrid
   
-  rendererDrawColor renderer $= white
+  rendererDrawColor renderer $= C.white
   drawText "Tetris v1" 500 100 2
   drawText "Score: 0" 450 300 0
+
+drawNextPiece :: Piece -> RIO DrawingContext ()
+drawNextPiece piece = drawing where
+  color :: V4 Word8 = getPieceColor piece
+  offsets :: [(Int, Int)] = getPieceOffsets piece
+  drawing = do
+    DrawingContext{ renderer } <- ask
+    rendererDrawColor renderer $= color
+    mapM_ (drawAt renderer) offsets
+  drawAt renderer (x, y) = do
+    let l = C.previewLeft + C.borderThickness + C.gap
+          + (fromIntegral x + 1) * (C.side + C.gap)
+        t = C.previewBottom - C.borderThickness
+          - ((fromIntegral y + 2) * (C.side + C.gap))
+    fillRect renderer (Just (ltwh l t C.side C.side))
+
+
+getPieceColor :: Piece -> V4 Word8
+getPieceColor = blockToColor . getPieceBlock
+
+drawBoardBlocks :: Board -> RIO DrawingContext ()
+drawBoardBlocks board = do
+  DrawingContext { renderer } <- ask
+  flip V.imapM_ board $ \y row ->
+    flip V.imapM_ row $ \x cell -> do
+      let l = C.boardLeft + C.borderThickness + C.gap
+            + fromIntegral x * (C.side + C.gap)
+          t = C.boardBottom - C.borderThickness
+            - ((fromIntegral y + 1) * (C.side + C.gap))
+      rendererDrawColor renderer $= blockToColor cell
+      fillRect renderer (Just (ltwh l t C.side C.side))
+
+blockToColor :: Block -> V4 Word8
+blockToColor block = case block of
+  Empty -> C.black
+  Red -> C.red
+  Orange -> C.orange
+  Yellow -> C.yellow
+  Green -> C.green
+  Blue -> C.blue
+  Navy -> C.navy
+  Purple -> C.purple
 
 thickRect :: CInt -> CInt -> CInt -> CInt -> CInt -> RIO DrawingContext ()
 thickRect l t w h thickness = do
   DrawingContext { renderer } <- ask
 
-  let white = V4 255 255 255 255
-      black = V4 0 0 0 255
-      fillRect' r = fillRect renderer (Just r)
-  rendererDrawColor renderer $= white
+  let fillRect' r = fillRect renderer (Just r)
+  rendererDrawColor renderer $= C.white
   fillRect' (ltwh l t w h)
 
-  rendererDrawColor renderer $= black
+  rendererDrawColor renderer $= C.black
   let k = thickness
   fillRect' (ltwh (l + k) (t + k) (w - 2 * k) (h - 2 * k))
 
 drawHelperGrid :: RIO DrawingContext ()
 drawHelperGrid = do
   DrawingContext { renderer } <- ask
-  let yellow = V4 255 255 0 255
-  rendererDrawColor renderer $= yellow
+  rendererDrawColor renderer $= C.yellow
   forM_ [0..8] $ \i -> do
     let offset = i * 100
         v1 = P (V2 offset   0)
@@ -117,9 +155,8 @@ drawText :: Text -> CInt -> CInt -> Int -> RIO DrawingContext ()
 drawText text x y size = do
   DrawingContext { renderer, fonts } <- ask
 
-  let white = V4 255 255 255 255
-      font = fonts !! size
-  surface <- blended font white text
+  let font = fonts !! size
+  surface <- blended font C.white text
   texture <- createTextureFromSurface renderer surface
 
   TextureInfo { textureWidth, textureHeight } <- queryTexture texture
@@ -138,5 +175,5 @@ ltwh left top width height = Rectangle leftTop widthHeight where
 fillBlackAll :: RIO DrawingContext ()
 fillBlackAll = do
   DrawingContext { renderer } <- ask
-  rendererDrawColor renderer $= V4 0 0 0 255
+  rendererDrawColor renderer $= C.black
   clear renderer
