@@ -77,7 +77,7 @@ render = withBackBuffer $ do
   drawText (fromString scoreText) 450 300 0
 
 drawCurrentPiece :: HasDrawing s => BoardPiece -> RIO s ()
-drawCurrentPiece BoardPiece{ kind, x, y, blockXys } = drawing where
+drawCurrentPiece BoardPiece{ kind, blockXys } = drawing where
   color :: V4 Word8 = getPieceColor kind
   drawing = do
     DrawingContext{ renderer } <- view drawingL

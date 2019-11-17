@@ -1,11 +1,21 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Tetris.Update.BoardPiece
-  ( module Tetris.Update.BoardPiece
-  , module Tetris.Update.Piece
+  ( module Tetris.Update.Piece
   , module Tetris.Update.HalfPi
+  , BoardPiece(..)
+  , makeBoardPiece
+  , x
+  , y
+  , rotation
+  -- , getX
+  -- , getY
+  -- , getKind
+  -- , getRotation
+  -- , getBlockXys
   ) where
 
 import RIO
@@ -15,19 +25,39 @@ import Tetris.Update.HalfPi
 
 data BoardPiece = BoardPiece
   { kind :: Piece
-  , x :: Int
-  , y :: Int
-  , rotation :: HalfPi
+  , _x :: Int
+  , _y :: Int
+  , _rotation :: HalfPi
   , blockXys :: [(Int, Int)]
   } deriving Show
 
-makeBoardPiece :: Piece -> Int -> Int -> HalfPi -> BoardPiece
-makeBoardPiece piece x y rot = BoardPiece piece x y rot xys where
-  xys = getBlocks piece x y rot 
+x :: Lens' BoardPiece Int
+x = lens _x setter where
+  setter piece val = p2 where
+    p1 = piece{ _x = val }
+    p2 = p1{ blockXys = getBlocks p1 }
 
-getBlocks :: Piece -> Int -> Int -> HalfPi -> [(Int, Int)]
-getBlocks kind x y rotation = blocks where
-  rotateCount :: Int = getRotation rotation
+y :: Lens' BoardPiece Int
+y = lens _y setter where
+  setter piece val = p2 where
+    p1 = piece{ _y = val }
+    p2 = p1{ blockXys = getBlocks p1 }
+
+rotation :: Lens' BoardPiece HalfPi
+rotation = lens _rotation setter where
+  setter piece val = p2 where
+    p1 = piece{ _rotation = val }
+    p2 = p1{ blockXys = getBlocks p1 }
+
+makeBoardPiece :: Piece -> Int -> Int -> HalfPi -> BoardPiece
+makeBoardPiece piece x y rot = boardPiece where
+  xys = getBlocks boardPiece
+  boardPiece = BoardPiece piece x y rot xys
+
+-- getBlocks :: Piece -> Int -> Int -> HalfPi -> [(Int, Int)]
+getBlocks :: BoardPiece -> [(Int, Int)]
+getBlocks BoardPiece{..} = blocks where
+  rotateCount :: Int = getRotation _rotation
   pieceRotations :: [[(Int, Int)]] = getRotatedBlockOffsets kind
   rotatedPiece :: [(Int, Int)] = pieceRotations !! rotateCount
-  blocks = [(x + offsetX, y + offsetY) | (offsetX, offsetY) <- rotatedPiece]
+  blocks = [(_x + offsetX, _y + offsetY) | (offsetX, offsetY) <- rotatedPiece]

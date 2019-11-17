@@ -64,10 +64,12 @@ handleEvent event = case S.eventPayload event of
   S.WindowClosedEvent _ -> return ()
   S.KeyboardEvent{} -> do
     state <- view stateL
+    app <- ask
     let cmd = getTetrisCommand event
         nextState = update state cmd
+        newApp = app{ state = nextState }
     if cmd /= Nop then logInfo (displayShow nextState) else return ()
-    eventLoop
+    runRIO newApp eventLoop
   _ -> eventLoop
 
 getTetrisCommand :: S.Event -> Command

@@ -34,7 +34,7 @@ isBlocksOverlap board blocks = isOverlap where
       return inRangeCell
   isOverlap = case overlapCellsOrNothing of
     Nothing -> True
-    Just overlapCells -> all (== Empty) overlapCells
+    Just overlapCells -> any (/= Empty) overlapCells
 
 commitBlocks :: Board -> Block -> [(Int, Int)] -> (Board, Int)
 commitBlocks board block xys = (nextBoard, earnedScore) where

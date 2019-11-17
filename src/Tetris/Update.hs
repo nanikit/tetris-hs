@@ -70,8 +70,7 @@ update prevState event = nextState where
 
 down :: TetrisState -> TetrisState
 down prevState@TetrisState{ board, curPiece } = nextState where
-  BoardPiece{ y } = curPiece
-  downed = curPiece { y = y - 1 }
+  downed = over y ((-) 1) curPiece 
   isTouchGround = hasOverlap board downed
   nextState = if isTouchGround
     then takeNextPiece prevState
@@ -79,24 +78,21 @@ down prevState@TetrisState{ board, curPiece } = nextState where
 
 left :: TetrisState -> TetrisState
 left prevState@TetrisState{ board, curPiece } = nextState where
-  BoardPiece{ x } = curPiece
-  moveLeft = curPiece { x = x - 1 }
+  moveLeft = over x ((-) 1) curPiece 
   nextState = if hasOverlap board moveLeft
     then prevState
     else prevState { curPiece = moveLeft }
 
 right :: TetrisState -> TetrisState
 right prevState@TetrisState{ board, curPiece } = nextState where
-  BoardPiece{ x } = curPiece
-  moveRight = curPiece { x = x + 1 }
+  moveRight = over x ((+) 1) curPiece 
   nextState = if hasOverlap board moveRight
     then prevState
     else prevState { curPiece = moveRight }
 
 rotate :: TetrisState -> TetrisState
 rotate prevState@TetrisState{ board, curPiece } = nextState where
-  BoardPiece{ rotation } = curPiece
-  rotated = curPiece { rotation = rotateCw rotation }
+  rotated = over rotation rotateCw curPiece 
   nextState = if hasOverlap board rotated
     then prevState
     else prevState { curPiece = rotated }
