@@ -20,6 +20,11 @@ data TetrisApp = TetrisApp
   , state :: TetrisState
   }
 
+instance HasLogFunc TetrisApp where
+  logFuncL = lens getter setter where
+    getter = logFunc
+    setter app val = app { logFunc = val }
+
 instance HasDrawing TetrisApp where
   drawingL = lens getter setter where
     getter = drawing
@@ -59,6 +64,7 @@ handleEvent event = case S.eventPayload event of
   S.WindowClosedEvent _ -> return ()
   S.KeyboardEvent{} -> do
     state <- view stateL
+    logInfo (displayShow state)
     let cmd = getTetrisCommand event
         nextState = update state cmd
     eventLoop
