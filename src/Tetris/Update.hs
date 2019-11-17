@@ -8,6 +8,7 @@ module Tetris.Update
   , update
   , Command(..)
   , TetrisState(..)
+  , HasTetrisState(..)
   , Block(..)
   , Board(..)
   , PlayState(..)
@@ -33,6 +34,9 @@ data TetrisState = TetrisState
   , board :: Board
   , seed :: StdGen
   } deriving Show
+
+class HasTetrisState env where
+  stateL :: Lens' env TetrisState
 
 startNew :: StdGen -> TetrisState
 startNew seed = TetrisState

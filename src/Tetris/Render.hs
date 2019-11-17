@@ -5,6 +5,7 @@
 
 module Tetris.Render
   ( DrawingContext
+  , HasDrawing(..)
   , initDrawingContext
   , render
   ) where
@@ -26,6 +27,9 @@ data DrawingContext = DrawingContext
   , backBuffer :: Texture
   , fonts :: [Font]
   }
+
+class HasDrawing env where
+  drawingL :: Lens' env DrawingContext
 
 initDrawingContext :: MonadIO m => m DrawingContext
 initDrawingContext = do
@@ -50,18 +54,18 @@ initDrawingContext = do
     fonts
     }
 
-render :: TetrisState -> RIO DrawingContext ()
-render state = withBackBuffer $ do
+render :: (HasDrawing s, HasTetrisState s) => RIO s ()
+render = withBackBuffer $ do
   fillBlackAll
 
   thickRect C.boardLeft C.boardTop C.boardWidth C.boardHeight C.borderThickness
   thickRect
     C.previewLeft C.previewTop C.previewWidth C.previewHeight C.borderThickness
 
-  let TetrisState{ board, curPiece, nextPiece, score } = state
+  TetrisState{ board, curPiece, nextPiece, score } <- view stateL
   drawBoardBlocks board
 
-  DrawingContext { renderer } <- ask
+  DrawingContext { renderer } <- view drawingL
   drawCurrentPiece curPiece
   drawNextPiece nextPiece
 
@@ -72,12 +76,12 @@ render state = withBackBuffer $ do
   let scoreText = "Score: " ++ show score
   drawText (fromString scoreText) 450 300 0
 
-drawCurrentPiece :: BoardPiece -> RIO DrawingContext ()
+drawCurrentPiece :: HasDrawing s => BoardPiece -> RIO s ()
 drawCurrentPiece BoardPiece{ kind, x, y, blockXys } = drawing where
   color :: V4 Word8 = getPieceColor kind
   absolutes = [(x + bx, y + by) | (bx, by) <- blockXys]
   drawing = do
-    DrawingContext{ renderer } <- ask
+    DrawingContext{ renderer } <- view drawingL
     rendererDrawColor renderer $= color
     mapM_ (drawAt renderer) absolutes
   drawAt renderer (x, y) = do
@@ -87,12 +91,12 @@ drawCurrentPiece BoardPiece{ kind, x, y, blockXys } = drawing where
           - ((fromIntegral y + 2) * (C.side + C.gap))
     fillRect renderer (Just (ltwh l t C.side C.side))
 
-drawNextPiece :: Piece -> RIO DrawingContext ()
+drawNextPiece :: HasDrawing s => Piece -> RIO s ()
 drawNextPiece piece = drawing where
   color :: V4 Word8 = getPieceColor piece
   offsets :: [(Int, Int)] = getPieceOffsets piece
   drawing = do
-    DrawingContext{ renderer } <- ask
+    DrawingContext{ renderer } <- view drawingL
     rendererDrawColor renderer $= color
     mapM_ (drawAt renderer) offsets
   drawAt renderer (x, y) = do
@@ -106,9 +110,9 @@ drawNextPiece piece = drawing where
 getPieceColor :: Piece -> V4 Word8
 getPieceColor = blockToColor . getPieceBlock
 
-drawBoardBlocks :: Board -> RIO DrawingContext ()
+drawBoardBlocks :: HasDrawing s => Board -> RIO s ()
 drawBoardBlocks board = do
-  DrawingContext { renderer } <- ask
+  DrawingContext{ renderer } <- view drawingL
   flip V.imapM_ board $ \y row ->
     flip V.imapM_ row $ \x cell -> do
       let l = C.boardLeft + C.borderThickness + C.gap
@@ -129,9 +133,9 @@ blockToColor block = case block of
   Navy -> C.navy
   Purple -> C.purple
 
-thickRect :: CInt -> CInt -> CInt -> CInt -> CInt -> RIO DrawingContext ()
+thickRect :: HasDrawing s => CInt -> CInt -> CInt -> CInt -> CInt -> RIO s ()
 thickRect l t w h thickness = do
-  DrawingContext { renderer } <- ask
+  DrawingContext { renderer } <- view drawingL
 
   let fillRect' r = fillRect renderer (Just r)
   rendererDrawColor renderer $= C.white
@@ -141,9 +145,9 @@ thickRect l t w h thickness = do
   let k = thickness
   fillRect' (ltwh (l + k) (t + k) (w - 2 * k) (h - 2 * k))
 
-drawHelperGrid :: RIO DrawingContext ()
+drawHelperGrid :: HasDrawing s => RIO s ()
 drawHelperGrid = do
-  DrawingContext { renderer } <- ask
+  DrawingContext { renderer } <- view drawingL
   rendererDrawColor renderer $= C.yellow
   forM_ [0..8] $ \i -> do
     let offset = i * 100
@@ -154,9 +158,9 @@ drawHelperGrid = do
     drawLine renderer v1 v2
     drawLine renderer h1 h2
 
-withBackBuffer :: RIO DrawingContext () -> RIO DrawingContext ()
+withBackBuffer :: (HasDrawing s, HasTetrisState s) => RIO s () -> RIO s ()
 withBackBuffer paint = do
-  DrawingContext { renderer, backBuffer } <- ask
+  DrawingContext{ renderer, backBuffer } <- view drawingL
 
   let useBackBuffer = rendererRenderTarget renderer $= Just backBuffer
       resetAndCommitBackBuffer = do
@@ -168,9 +172,9 @@ withBackBuffer paint = do
   paint
   resetAndCommitBackBuffer
 
-drawText :: Text -> CInt -> CInt -> Int -> RIO DrawingContext ()
+drawText :: HasDrawing s => Text -> CInt -> CInt -> Int -> RIO s ()
 drawText text x y size = do
-  DrawingContext { renderer, fonts } <- ask
+  DrawingContext{ renderer, fonts } <- view drawingL
 
   let font = fonts !! size
   surface <- blended font C.white text
@@ -189,8 +193,8 @@ ltwh left top width height = Rectangle leftTop widthHeight where
   leftTop = P (V2 left top)
   widthHeight = V2 width height
 
-fillBlackAll :: RIO DrawingContext ()
+fillBlackAll :: HasDrawing s => RIO s ()
 fillBlackAll = do
-  DrawingContext { renderer } <- ask
+  DrawingContext { renderer } <- view drawingL
   rendererDrawColor renderer $= C.black
   clear renderer

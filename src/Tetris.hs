@@ -20,6 +20,16 @@ data TetrisApp = TetrisApp
   , state :: TetrisState
   }
 
+instance HasDrawing TetrisApp where
+  drawingL = lens getter setter where
+    getter = drawing
+    setter app val = app { drawing = val }
+
+instance HasTetrisState TetrisApp where
+  stateL = lens getter setter where
+    getter = state
+    setter app val = app { state = val }
+
 runTetris :: (MonadIO m, MonadUnliftIO m) => m ()
 runTetris = do
   context <- initDrawingContext  
@@ -32,26 +42,27 @@ runTetris = do
           , state = initialGameState
           , drawing = context
           }
-    runRIO context (eventLoop initialGameState)
+    runRIO app eventLoop
   F.quit
   S.quit
 
-eventLoop :: TetrisState -> RIO DrawingContext ()
-eventLoop state = do
-  render state
+eventLoop :: RIO TetrisApp ()
+eventLoop = do
+  render
   event :: Maybe S.Event <- S.waitEventTimeout (1000 `quot` 10)
   case event of
-    Just event -> handleEvent state event
-    Nothing -> eventLoop state
+    Just event -> handleEvent event
+    Nothing -> eventLoop
   
-handleEvent :: TetrisState -> S.Event -> RIO DrawingContext ()
-handleEvent state event = case S.eventPayload event of
+handleEvent :: S.Event -> RIO TetrisApp ()
+handleEvent event = case S.eventPayload event of
   S.WindowClosedEvent _ -> return ()
   S.KeyboardEvent{} -> do
+    state <- view stateL
     let cmd = getTetrisCommand event
         nextState = update state cmd
-    eventLoop nextState
-  _ -> eventLoop state
+    eventLoop
+  _ -> eventLoop
 
 getTetrisCommand :: S.Event -> Command
 getTetrisCommand event = command where
