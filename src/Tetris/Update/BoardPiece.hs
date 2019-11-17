@@ -19,7 +19,7 @@ data BoardPiece = BoardPiece
   , y :: Int
   , rotation :: HalfPi
   , blockXys :: [(Int, Int)]
-  }
+  } deriving Show
 
 makeBoardPiece :: Piece -> Int -> Int -> HalfPi -> BoardPiece
 makeBoardPiece piece x y rot = BoardPiece piece x y rot xys where

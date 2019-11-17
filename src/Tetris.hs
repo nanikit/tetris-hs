@@ -7,22 +7,32 @@ module Tetris
   ( runTetris
   ) where
 
-import RIO
+import RIO as R
 import System.Random
 import Tetris.Update as U
 import Tetris.Render
 import qualified SDL as S
 import qualified SDL.Font as F
 
-runTetris :: IO ()
-runTetris = runSimpleApp tetris
+data TetrisApp = TetrisApp
+  { logFunc :: LogFunc
+  , drawing :: DrawingContext
+  , state :: TetrisState
+  }
 
-tetris :: RIO SimpleApp ()
-tetris = do
+runTetris :: (MonadIO m, MonadUnliftIO m) => m ()
+runTetris = do
   context <- initDrawingContext  
   seed <- liftIO getStdGen
   let initialGameState = startNew seed
-  runRIO context (eventLoop initialGameState)
+  logOptions <- logOptionsHandle stderr False
+  withLogFunc logOptions $ \lf -> do
+    let app = TetrisApp
+          { logFunc = lf
+          , state = initialGameState
+          , drawing = context
+          }
+    runRIO context (eventLoop initialGameState)
   F.quit
   S.quit
 

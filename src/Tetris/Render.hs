@@ -58,17 +58,34 @@ render state = withBackBuffer $ do
   thickRect
     C.previewLeft C.previewTop C.previewWidth C.previewHeight C.borderThickness
 
-  let TetrisState{ board, nextPiece } = state
+  let TetrisState{ board, curPiece, nextPiece, score } = state
   drawBoardBlocks board
 
   DrawingContext { renderer } <- ask
+  drawCurrentPiece curPiece
   drawNextPiece nextPiece
 
   -- drawHelperGrid
   
   rendererDrawColor renderer $= C.white
   drawText "Tetris v1" 500 100 2
-  drawText "Score: 0" 450 300 0
+  let scoreText = "Score: " ++ show score
+  drawText (fromString scoreText) 450 300 0
+
+drawCurrentPiece :: BoardPiece -> RIO DrawingContext ()
+drawCurrentPiece BoardPiece{ kind, x, y, blockXys } = drawing where
+  color :: V4 Word8 = getPieceColor kind
+  absolutes = [(x + bx, y + by) | (bx, by) <- blockXys]
+  drawing = do
+    DrawingContext{ renderer } <- ask
+    rendererDrawColor renderer $= color
+    mapM_ (drawAt renderer) absolutes
+  drawAt renderer (x, y) = do
+    let l = C.boardLeft + C.borderThickness + C.gap
+          + (fromIntegral x + 1) * (C.side + C.gap)
+        t = C.boardBottom - C.borderThickness
+          - ((fromIntegral y + 2) * (C.side + C.gap))
+    fillRect renderer (Just (ltwh l t C.side C.side))
 
 drawNextPiece :: Piece -> RIO DrawingContext ()
 drawNextPiece piece = drawing where

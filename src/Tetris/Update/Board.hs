@@ -20,7 +20,7 @@ import qualified RIO.Vector.Boxed as V
 data Block
   = Empty | Red | Orange | Yellow
   | Green | Blue | Navy | Purple
-  deriving (Eq, Enum)
+  deriving (Eq, Enum, Show)
 
 -- Origin is left bottom
 type Board = V.Vector (V.Vector Block)

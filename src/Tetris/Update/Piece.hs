@@ -17,7 +17,7 @@ import RIO.Partial (toEnum)
 import System.Random
 import Tetris.Update.Board (Block(..))
 
-data Piece = O | I | T | L | J | Z | S deriving (Enum, Eq, Bounded)
+data Piece = O | I | T | L | J | Z | S deriving (Enum, Eq, Show, Bounded)
 
 instance Random Piece where
   random gen = (toEnum randInt, newGen) where

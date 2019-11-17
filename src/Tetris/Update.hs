@@ -11,6 +11,7 @@ module Tetris.Update
   , Block(..)
   , Board(..)
   , PlayState(..)
+  , BoardPiece(..)
   ) where
 
 import RIO hiding (Right, Left, Down, drop)
@@ -20,7 +21,7 @@ import System.Random
 import Tetris.Update.Board
 import Tetris.Update.BoardPiece
 
-data PlayState = Intro | Playing | Pause | End
+data PlayState = Intro | Playing | Pause | End deriving Show
 
 data TetrisState = TetrisState
   { startTime :: Int
@@ -31,7 +32,7 @@ data TetrisState = TetrisState
   , nextPiece :: Piece
   , board :: Board
   , seed :: StdGen
-  }
+  } deriving Show
 
 startNew :: StdGen -> TetrisState
 startNew seed = TetrisState
