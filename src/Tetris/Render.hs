@@ -79,17 +79,11 @@ render = withBackBuffer $ do
 drawCurrentPiece :: HasDrawing s => BoardPiece -> RIO s ()
 drawCurrentPiece BoardPiece{ kind, x, y, blockXys } = drawing where
   color :: V4 Word8 = getPieceColor kind
-  absolutes = [(x + bx, y + by) | (bx, by) <- blockXys]
   drawing = do
     DrawingContext{ renderer } <- view drawingL
     rendererDrawColor renderer $= color
-    mapM_ (drawAt renderer) absolutes
-  drawAt renderer (x, y) = do
-    let l = C.boardLeft + C.borderThickness + C.gap
-          + (fromIntegral x + 1) * (C.side + C.gap)
-        t = C.boardBottom - C.borderThickness
-          - ((fromIntegral y + 2) * (C.side + C.gap))
-    fillRect renderer (Just (ltwh l t C.side C.side))
+    let draw = uncurry (drawBoardBlock renderer)
+    mapM_ draw blockXys
 
 drawNextPiece :: HasDrawing s => Piece -> RIO s ()
 drawNextPiece piece = drawing where
@@ -110,17 +104,24 @@ drawNextPiece piece = drawing where
 getPieceColor :: Piece -> V4 Word8
 getPieceColor = blockToColor . getPieceBlock
 
+drawBoardBlock :: MonadIO m => Renderer -> Int -> Int -> m ()
+drawBoardBlock renderer x y = drawing where
+  originInterval = C.side + C.gap
+  leftmost = C.boardLeft + C.borderThickness + C.gap
+  l = leftmost + fromIntegral x * originInterval
+
+  bottommost = C.boardBottom - C.borderThickness - originInterval
+  t = bottommost - (fromIntegral y * originInterval)
+
+  drawing = fillRect renderer (Just (ltwh l t C.side C.side))
+
 drawBoardBlocks :: HasDrawing s => Board -> RIO s ()
 drawBoardBlocks board = do
   DrawingContext{ renderer } <- view drawingL
   flip V.imapM_ board $ \y row ->
     flip V.imapM_ row $ \x cell -> do
-      let l = C.boardLeft + C.borderThickness + C.gap
-            + fromIntegral x * (C.side + C.gap)
-          t = C.boardBottom - C.borderThickness
-            - ((fromIntegral y + 1) * (C.side + C.gap))
       rendererDrawColor renderer $= blockToColor cell
-      fillRect renderer (Just (ltwh l t C.side C.side))
+      drawBoardBlock renderer x y
 
 blockToColor :: Block -> V4 Word8
 blockToColor block = case block of

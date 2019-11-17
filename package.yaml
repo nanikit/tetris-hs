@@ -52,6 +52,7 @@ executables:
     # - -optl-lole32
     # - -optl-lSetupapi
     # - -optl-lOleAut32
+    - -optl-Wl,--subsystem,console
     dependencies:
     - tetris-hs
 

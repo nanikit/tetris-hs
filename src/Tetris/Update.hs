@@ -55,7 +55,7 @@ startNew seed = TetrisState
   (piece1, seed1) = random seed
   (piece2, seed2) = random seed1
 
-data Command = Nop | Left | Right | Rotate | Down | Drop
+data Command = Nop | Left | Right | Rotate | Down | Drop deriving (Eq)
 
 update :: TetrisState -> Command -> TetrisState
 update prevState event = nextState where
@@ -88,7 +88,7 @@ left prevState@TetrisState{ board, curPiece } = nextState where
 right :: TetrisState -> TetrisState
 right prevState@TetrisState{ board, curPiece } = nextState where
   BoardPiece{ x } = curPiece
-  moveRight = curPiece { x = x - 1 }
+  moveRight = curPiece { x = x + 1 }
   nextState = if hasOverlap board moveRight
     then prevState
     else prevState { curPiece = moveRight }
@@ -112,7 +112,10 @@ takeNextPiece :: TetrisState -> TetrisState
 takeNextPiece = generateNewPiece . fixCurrentPiece
 
 generateNewPiece :: TetrisState -> TetrisState
-generateNewPiece state@TetrisState{ seed, nextPiece, consumedPieceCount } = newState where
+generateNewPiece
+  state@TetrisState{ seed, nextPiece, consumedPieceCount }
+  = newState where
+
   (newNextPiece :: Piece, newSeed) = random seed
   newCurPiece :: BoardPiece = makeBoardPiece nextPiece 5 17 Zero
   newState = state

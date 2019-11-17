@@ -64,9 +64,9 @@ handleEvent event = case S.eventPayload event of
   S.WindowClosedEvent _ -> return ()
   S.KeyboardEvent{} -> do
     state <- view stateL
-    logInfo (displayShow state)
     let cmd = getTetrisCommand event
         nextState = update state cmd
+    if cmd /= Nop then logInfo (displayShow nextState) else return ()
     eventLoop
   _ -> eventLoop
 
