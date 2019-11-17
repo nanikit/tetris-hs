@@ -56,21 +56,27 @@ initDrawingContext = do
 
 render :: (HasDrawing s, HasTetrisState s) => RIO s ()
 render = withBackBuffer $ do
-  fillBlackAll
+  drawFrame
 
+  TetrisState{ board, curPiece, nextPiece } <- view stateL
+  drawBoardBlocks board
+  drawCurrentPiece curPiece
+  drawNextPiece nextPiece
+
+  drawTexts
+
+drawFrame :: HasDrawing s => RIO s ()
+drawFrame = do
+  fillBlackAll
   thickRect C.boardLeft C.boardTop C.boardWidth C.boardHeight C.borderThickness
   thickRect
     C.previewLeft C.previewTop C.previewWidth C.previewHeight C.borderThickness
 
-  TetrisState{ board, curPiece, nextPiece, score } <- view stateL
-  drawBoardBlocks board
-
+drawTexts :: (HasDrawing s, HasTetrisState s) => RIO s ()
+drawTexts = do
   DrawingContext { renderer } <- view drawingL
-  drawCurrentPiece curPiece
-  drawNextPiece nextPiece
+  TetrisState{ score } <- view stateL
 
-  -- drawHelperGrid
-  
   rendererDrawColor renderer $= C.white
   drawText "Tetris v1" 500 100 2
   let scoreText = "Score: " ++ show score
@@ -145,19 +151,6 @@ thickRect l t w h thickness = do
   rendererDrawColor renderer $= C.black
   let k = thickness
   fillRect' (ltwh (l + k) (t + k) (w - 2 * k) (h - 2 * k))
-
-drawHelperGrid :: HasDrawing s => RIO s ()
-drawHelperGrid = do
-  DrawingContext { renderer } <- view drawingL
-  rendererDrawColor renderer $= C.yellow
-  forM_ [0..8] $ \i -> do
-    let offset = i * 100
-        v1 = P (V2 offset   0)
-        v2 = P (V2 offset 600)
-        h1 = P (V2   0 offset)
-        h2 = P (V2 800 offset)
-    drawLine renderer v1 v2
-    drawLine renderer h1 h2
 
 withBackBuffer :: (HasDrawing s, HasTetrisState s) => RIO s () -> RIO s ()
 withBackBuffer paint = do
