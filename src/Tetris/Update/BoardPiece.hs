@@ -11,11 +11,6 @@ module Tetris.Update.BoardPiece
   , x
   , y
   , rotation
-  -- , getX
-  -- , getY
-  -- , getKind
-  -- , getRotation
-  -- , getBlockXys
   ) where
 
 import RIO
@@ -54,7 +49,6 @@ makeBoardPiece piece x y rot = boardPiece where
   xys = getBlocks boardPiece
   boardPiece = BoardPiece piece x y rot xys
 
--- getBlocks :: Piece -> Int -> Int -> HalfPi -> [(Int, Int)]
 getBlocks :: BoardPiece -> [(Int, Int)]
 getBlocks BoardPiece{..} = blocks where
   rotateCount :: Int = getRotation _rotation

@@ -38,8 +38,8 @@ instance HasTetrisState TetrisApp where
 runTetris :: (MonadIO m, MonadUnliftIO m) => m ()
 runTetris = do
   context <- initDrawingContext  
-  seed <- liftIO getStdGen
-  let initialGameState = startNew seed
+  startTick <- S.ticks
+  let initialGameState = startNew startTick
   logOptions <- logOptionsHandle stderr False
   withLogFunc logOptions $ \lf -> do
     let app = TetrisApp
@@ -65,8 +65,10 @@ handleEvent event = case S.eventPayload event of
   S.KeyboardEvent{} -> do
     state <- view stateL
     app <- ask
-    let cmd = getTetrisCommand event
-        nextState = update state cmd
+    tick <- S.ticks
+    let curState = state{ currentTick = tick }
+        cmd = getTetrisCommand event
+        nextState = update curState cmd
         newApp = app{ state = nextState }
     if cmd /= Nop then logInfo (displayShow nextState) else return ()
     runRIO newApp eventLoop

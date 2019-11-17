@@ -16,7 +16,8 @@ module Tetris.Update
   ) where
 
 import RIO hiding (Right, Left, Down, drop)
-import RIO.List (cycle)
+import RIO.List (cycle, groupBy, iterate)
+import RIO.List.Partial (head, tail)
 import RIO.Partial (toEnum)
 import System.Random
 import Tetris.Update.Board
@@ -25,7 +26,9 @@ import Tetris.Update.BoardPiece
 data PlayState = Intro | Playing | Pause | End deriving Show
 
 data TetrisState = TetrisState
-  { startTime :: Int
+  { startTick :: Word32
+  , lastDownTick :: Word32
+  , currentTick :: Word32
   , playing :: PlayState
   , consumedPieceCount :: Int
   , score :: Int
@@ -38,9 +41,11 @@ data TetrisState = TetrisState
 class HasTetrisState env where
   stateL :: Lens' env TetrisState
 
-startNew :: StdGen -> TetrisState
-startNew seed = TetrisState
-  { startTime = 0
+startNew :: Word32 -> TetrisState
+startNew startTick = TetrisState
+  { startTick = startTick
+  , lastDownTick = startTick
+  , currentTick = startTick
   , playing = Intro
   , consumedPieceCount = 0
   , score = 0
@@ -51,7 +56,8 @@ startNew seed = TetrisState
   } where
 
   piece1, piece2 :: Piece
-  seed1, seed2 :: StdGen
+  seed, seed1, seed2 :: StdGen
+  seed = mkStdGen (fromIntegral startTick)
   (piece1, seed1) = random seed
   (piece2, seed2) = random seed1
 
@@ -98,7 +104,12 @@ rotate prevState@TetrisState{ board, curPiece } = nextState where
     else prevState { curPiece = rotated }
 
 drop :: TetrisState -> TetrisState
-drop = undefined
+drop state = droppedAfter where
+  futures :: [TetrisState] = iterate down state
+  isConsumeSame :: TetrisState -> TetrisState -> Bool
+  isConsumeSame a b = consumedPieceCount a == consumedPieceCount b
+  samePieceGroups :: [[TetrisState]] = groupBy isConsumeSame futures
+  droppedAfter = (head . head . tail) samePieceGroups
 
 hasOverlap :: Board -> BoardPiece -> Bool
 hasOverlap board piece = isOverlap where
