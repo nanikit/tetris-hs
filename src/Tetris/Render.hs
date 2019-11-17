@@ -15,7 +15,7 @@ import SDL.Font as F
 import Linear (V4(..))
 import Foreign.C.Types (CInt)
 import RIO.List.Partial ((!!))
-
+import Tetris.Update
 
 data DrawingContext = DrawingContext
   { window :: Window
@@ -47,8 +47,8 @@ initDrawingContext = do
     fonts
     }
 
-render :: RIO DrawingContext ()
-render = withBackBuffer $ do
+render :: TetrisState -> RIO DrawingContext ()
+render state = withBackBuffer $ do
   DrawingContext { renderer } <- ask
 
   fillBlackAll

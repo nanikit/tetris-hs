@@ -4,7 +4,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module Tetris.Update
-  ( update
+  ( startNew
+  , update
+  , Command(..)
+  , TetrisState(..)
   ) where
 
 import RIO hiding (Right, Left, Down, drop)
@@ -27,12 +30,29 @@ data TetrisState = TetrisState
   , seed :: StdGen
   }
 
-data Event = Progress | Left | Right | Rotate | Down | Drop
+startNew :: StdGen -> TetrisState
+startNew seed = TetrisState
+  { startTime = 0
+  , playing = Intro
+  , consumedPieceCount = 0
+  , score = 0
+  , curPiece = makeBoardPiece piece1 5 17 Zero
+  , nextPiece = piece2
+  , board = emptyBoard
+  , seed = seed2
+  } where
 
-update :: TetrisState -> Event -> TetrisState
+  piece1, piece2 :: Piece
+  seed1, seed2 :: StdGen
+  (piece1, seed1) = random seed
+  (piece2, seed2) = random seed1
+
+data Command = Nop | Left | Right | Rotate | Down | Drop
+
+update :: TetrisState -> Command -> TetrisState
 update prevState event = nextState where
   action = case event of
-    Progress -> down
+    Nop -> id
     Down -> down
     Left -> left
     Right -> right
@@ -85,7 +105,7 @@ takeNextPiece = generateNewPiece . fixCurrentPiece
 
 generateNewPiece :: TetrisState -> TetrisState
 generateNewPiece state@TetrisState{ seed, nextPiece, consumedPieceCount } = newState where
-  (newNextPiece, newSeed) = random seed
+  (newNextPiece :: Piece, newSeed) = random seed
   newCurPiece :: BoardPiece = makeBoardPiece nextPiece 5 17 Zero
   newState = state
     { curPiece = newCurPiece

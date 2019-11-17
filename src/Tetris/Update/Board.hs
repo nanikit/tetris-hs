@@ -8,6 +8,7 @@ module Tetris.Update.Board
   , Board
   , isBlocksOverlap
   , commitBlocks
+  , emptyBoard
   ) where
 
 import RIO
@@ -59,10 +60,12 @@ commit board block xys = V.modify setBlocks board where
   commitCell :: PrimMonad m => Int -> MVector (PrimState m) Block -> m ()
   commitCell x row = write row x block
 
+emptyRow :: V.Vector Block = V.replicate 10 Empty
+emptyRows :: [V.Vector Block] = replicate 20 emptyRow
+emptyBoard :: Board = V.fromList emptyRows
+
 fillVoidArea :: [V.Vector Block] -> Board
 fillVoidArea holeRows = nextBoard where
-  emptyRow :: V.Vector Block = V.replicate 10 Empty
-  emptyRows :: [V.Vector Block] = replicate 20 emptyRow
   nextRows :: [V.Vector Block] = take 20 (holeRows ++ emptyRows)
   nextBoard = V.fromList nextRows
 
