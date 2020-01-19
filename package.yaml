@@ -33,6 +33,10 @@ dependencies:
 
 library:
   source-dirs: src
+  when:
+    - condition: flag(dev)
+      cpp-options:
+      - -DDEV
 
 c-sources:
   - cbits/legacy_stdio_definitions.c
@@ -45,14 +49,10 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    # - -optl-static
-    # - -pgml gcc "-optl-Wl,--allow-multiple-definition" "-optl-Wl,--whole-archive" "-optl-Wl,-Bstatic" "-optl-Wl,-lsdl2" "-optl-Wl,-Bdynamic" "-optl-Wl,--no-whole-archive"
-    # - -optl-LC:\Program,Files,(x86)\Microsoft,Visual,Stidio\2019\Preview\VC\Tools\MSVC\14.24.28117\lib\x64
-    # - -optl-lversion
-    # - -optl-lole32
-    # - -optl-lSetupapi
-    # - -optl-lOleAut32
-    - -optl-Wl,--subsystem,console
+    when:
+      - condition: flag(dev)
+        ghc-options:
+        - -optl-Wl,--subsystem,console
     dependencies:
     - tetris-hs
 
@@ -66,3 +66,9 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - tetris-hs
+
+flags:
+  dev:
+    description: Use console for debug
+    manual: true
+    default: false

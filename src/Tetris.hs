@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -14,6 +15,7 @@ import Tetris.Render
 import qualified SDL as S
 import qualified SDL.Font as F
 import qualified Tetris.Update as U
+import qualified Prelude
 
 data TetrisApp = TetrisApp
   { logFunc :: LogFunc
@@ -41,6 +43,8 @@ runTetris = do
   context <- initDrawingContext  
   startTick <- S.ticks
   let initialGameState = startNew startTick
+#ifdef DEV
+  liftIO $ Prelude.putStrLn "dev"
   logOptions <- logOptionsHandle stderr False
   withLogFunc logOptions $ \lf -> do
     let app = TetrisApp
@@ -49,6 +53,17 @@ runTetris = do
           , drawing = context
           }
     runRIO app eventLoop
+#else
+  liftIO $ Prelude.putStrLn "release"
+  let lf = mkLogFunc nopLogger
+      nopLogger _ _ _ _ = return () 
+      app = TetrisApp
+          { logFunc = lf
+          , state = initialGameState
+          , drawing = context
+          }
+  runRIO app eventLoop
+#endif
   F.quit
   S.quit
 
