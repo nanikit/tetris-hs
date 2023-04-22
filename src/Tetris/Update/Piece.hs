@@ -9,11 +9,11 @@ module Tetris.Update.Piece
   )
 where
 
-import RIO
+import RIO (Bounded (..), Enum (..), Eq, Int, Show, (.))
 import RIO.List (cycle)
 import RIO.List.Partial (head)
 import RIO.Partial (toEnum)
-import System.Random
+import System.Random (Random (random, randomR))
 import Tetris.Update.Board (Block (..))
 
 data Piece = O | I | T | L | J | Z | S deriving (Enum, Eq, Show, Bounded)

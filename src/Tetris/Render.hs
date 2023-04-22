@@ -14,13 +14,75 @@ where
 import Foreign.C.Types (CInt)
 import Linear (V4 (..))
 import RIO
+  ( Bool (True),
+    Int,
+    IsString (fromString),
+    Lens',
+    Maybe (Just, Nothing),
+    Monad (return),
+    MonadIO,
+    Num ((*), (+), (-)),
+    RIO,
+    Show (show),
+    Text,
+    Traversable (mapM),
+    Word8,
+    flip,
+    fromIntegral,
+    mapM_,
+    uncurry,
+    view,
+    ($),
+    (++),
+    (.),
+  )
 import RIO.List.Partial ((!!))
 import RIO.Vector qualified as V
 import SDL as S
-import SDL.Font as F
+  ( PixelFormat (RGBA8888),
+    Point (P),
+    Rectangle (..),
+    Renderer,
+    RendererConfig (rendererTargetTexture),
+    Texture,
+    TextureAccess (TextureAccessTarget),
+    TextureInfo (TextureInfo, textureHeight, textureWidth),
+    V2 (V2),
+    V4,
+    Window,
+    WindowConfig (windowInitialSize),
+    clear,
+    copy,
+    createRenderer,
+    createTexture,
+    createTextureFromSurface,
+    createWindow,
+    defaultRenderer,
+    defaultWindow,
+    destroyTexture,
+    fillRect,
+    freeSurface,
+    initializeAll,
+    present,
+    queryTexture,
+    rendererDrawColor,
+    rendererRenderTarget,
+    ($=),
+  )
+import SDL.Font as F (Font, blended, initialize, load)
 import Tetris.Render.Constants qualified as C
 import Tetris.Update
+  ( Block (..),
+    Board,
+    BoardPiece (BoardPiece, blockXys, kind),
+    HasTetrisState (..),
+    TetrisState (TetrisState, board, curPiece, nextPiece, score),
+  )
 import Tetris.Update.Piece
+  ( Piece,
+    getPieceBlock,
+    getPieceOffsets,
+  )
 
 data DrawingContext = DrawingContext
   { window :: Window,

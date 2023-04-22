@@ -15,13 +15,43 @@ module Tetris.Update
   )
 where
 
-import RIO hiding (Down, Left, Right, drop)
+import RIO
+  ( Bool,
+    Eq ((==)),
+    Int,
+    Lens',
+    Num ((+), (-)),
+    Ord ((>)),
+    Show,
+    Word32,
+    fromIntegral,
+    id,
+    over,
+    subtract,
+    (.),
+  )
 import RIO.List (cycle, groupBy, iterate)
 import RIO.List.Partial (head, tail)
 import RIO.Partial (toEnum)
-import System.Random
+import System.Random (Random (random), StdGen, mkStdGen)
 import Tetris.Update.Board
+  ( Block (..),
+    Board,
+    commitBlocks,
+    emptyBoard,
+    isBlocksOverlap,
+  )
 import Tetris.Update.BoardPiece
+  ( BoardPiece (..),
+    HalfPi (Zero),
+    Piece,
+    getPieceBlock,
+    makeBoardPiece,
+    rotateCw,
+    rotation,
+    x,
+    y,
+  )
 
 data PlayState = Intro | Playing | Pause | End deriving (Show)
 

@@ -8,9 +8,34 @@ module Tetris
   ) where
 
 import RIO as R
+    ( ($),
+      Eq((==), (/=)),
+      Integral(quot),
+      Monad(return),
+      Bool,
+      Maybe(..),
+      (.),
+      undefined,
+      lens,
+      view,
+      displayShow,
+      logInfo,
+      mkLogFunc,
+      runRIO,
+      MonadIO(..),
+      MonadReader(ask),
+      HasLogFunc(..),
+      LogFunc,
+      RIO,
+      MonadUnliftIO )
 import System.Random
-import Tetris.Update hiding (update)
+import Tetris.Update
+    ( Command(Nop, Rotate, Drop),
+      HasTetrisState(..),
+      TetrisState(currentTick),
+      startNew )
 import Tetris.Render
+    ( HasDrawing(..), DrawingContext, initDrawingContext, render )
 import qualified SDL as S
 import qualified SDL.Font as F
 import qualified Tetris.Update as U

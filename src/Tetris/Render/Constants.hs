@@ -5,7 +5,7 @@ module Tetris.Render.Constants where
 
 import Foreign.C.Types (CInt)
 import Linear (V4 (..))
-import RIO
+import RIO (Num ((*), (+), (-)), Word8)
 
 gap, side, borderThickness :: CInt
 gap = 4

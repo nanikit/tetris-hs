@@ -13,7 +13,7 @@ module Tetris.Update.BoardPiece
   )
 where
 
-import RIO
+import RIO (Int, Lens', Num ((+)), Show, lens)
 import RIO.List.Partial ((!!))
 import Tetris.Update.HalfPi
 import Tetris.Update.Piece

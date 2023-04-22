@@ -11,9 +11,26 @@ module Tetris.Update.Board
   )
 where
 
-import Data.Vector.Mutable hiding (forM_, length, replicate, take)
+import Data.Vector.Mutable (MVector, read, write)
 import Data.Vector.Mutable qualified as MV
 import RIO
+  ( Bool (True),
+    Enum,
+    Eq ((/=)),
+    Foldable (length),
+    Int,
+    Maybe (..),
+    PrimMonad (PrimState),
+    Show,
+    Vector,
+    any,
+    for,
+    forM_,
+    replicate,
+    take,
+    ($),
+    (++),
+  )
 import RIO.List (partition)
 import RIO.Vector.Boxed qualified as V
 
