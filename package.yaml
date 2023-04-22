@@ -38,9 +38,6 @@ library:
       cpp-options:
       - -DDEV
 
-c-sources:
-  - cbits/legacy_stdio_definitions.c
-
 executables:
   tetris:
     main:                Main.hs

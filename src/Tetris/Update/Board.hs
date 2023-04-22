@@ -13,7 +13,7 @@ module Tetris.Update.Board
 
 import RIO
 import RIO.List (partition)
-import Data.Vector.Mutable hiding (replicate, take, length)
+import Data.Vector.Mutable hiding (replicate, take, length, forM_)
 import qualified Data.Vector.Mutable as MV
 import qualified RIO.Vector.Boxed as V
 
