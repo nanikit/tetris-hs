@@ -1,7 +1,5 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Tetris.Update.HalfPi where
 
