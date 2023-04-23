@@ -1,6 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Tetris.Update.HalfPi where
 
 import RIO (Enum (..), Eq, Int, Show)

@@ -1,7 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Tetris.Update
   ( startNew,
     update,
@@ -17,23 +13,28 @@ where
 
 import RIO
   ( Bool,
+    Bounded (maxBound, minBound),
     Eq ((==)),
     Int,
     Lens',
+    Maybe (Just),
     Num ((+), (-)),
     Ord ((>)),
     Show,
     Word32,
+    concat,
     fromIntegral,
     id,
+    length,
     over,
     subtract,
+    (++),
     (.),
   )
-import RIO.List (cycle, groupBy, iterate)
+import RIO.List (cycle, groupBy, iterate, splitAt, unfoldr)
 import RIO.List.Partial (head, tail)
 import RIO.Partial (toEnum)
-import System.Random (Random (random), StdGen, mkStdGen)
+import System.Random (Random (random, randomR), RandomGen, StdGen, mkStdGen)
 import Tetris.Update.Board
   ( Block (..),
     Board,
@@ -62,8 +63,8 @@ data TetrisState = TetrisState
     playing :: PlayState,
     consumedPieceCount :: Int,
     score :: Int,
-    curPiece :: BoardPiece,
-    nextPiece :: Piece,
+    currentPiece :: BoardPiece,
+    nextPieces :: [Piece],
     board :: Board,
     seed :: StdGen
   }
@@ -81,17 +82,27 @@ startNew startTick =
       playing = Intro,
       consumedPieceCount = 0,
       score = 0,
-      curPiece = makeBoardPiece piece1 5 17 Zero,
-      nextPiece = piece2,
+      currentPiece = makeBoardPiece currentPiece 5 17 Zero,
+      nextPieces = nextPieces,
       board = emptyBoard,
-      seed = seed2
+      seed = seed
     }
   where
-    piece1, piece2 :: Piece
-    seed, seed1, seed2 :: StdGen
+    seed :: StdGen
     seed = mkStdGen (fromIntegral startTick)
-    (piece1, seed1) = random seed
-    (piece2, seed2) = random seed1
+    generate :: (RandomGen g) => g -> Maybe ([Piece], g)
+    generate seed = Just (shuffle seed [minBound .. maxBound])
+    currentPiece :: Piece
+    currentPiece : nextPieces = concat (unfoldr generate seed)
+
+shuffle :: (RandomGen g) => g -> [a] -> ([a], g)
+shuffle gen [] = ([], gen)
+shuffle gen [x] = ([x], gen)
+shuffle gen xs = (x : shuffled, lastGen)
+  where
+    (shuffled, lastGen) = shuffle newGen (head ++ rest)
+    (index, newGen) = randomR (0, length xs - 1) gen
+    (head, x : rest) = splitAt index xs
 
 data Command = Nop | Left | Right | Rotate | Down | Drop deriving (Eq)
 
@@ -114,42 +125,42 @@ downIfTimeout state@TetrisState {lastDownTick, currentTick} = nextState
     nextState = action state
 
 down :: TetrisState -> TetrisState
-down prevState@TetrisState {board, curPiece, currentTick} = nextState
+down prevState@TetrisState {board, currentPiece, currentTick} = nextState
   where
-    downed = over y (subtract 1) curPiece
+    downed = over y (subtract 1) currentPiece
     isTouchGround = hasOverlap board downed
     pieceMoved =
       if isTouchGround
         then takeNextPiece prevState
-        else prevState {curPiece = downed}
+        else prevState {currentPiece = downed}
     nextState = pieceMoved {lastDownTick = currentTick}
 
 left :: TetrisState -> TetrisState
-left prevState@TetrisState {board, curPiece} = nextState
+left prevState@TetrisState {board, currentPiece} = nextState
   where
-    moveLeft = over x (subtract 1) curPiece
+    moveLeft = over x (subtract 1) currentPiece
     nextState =
       if hasOverlap board moveLeft
         then prevState
-        else prevState {curPiece = moveLeft}
+        else prevState {currentPiece = moveLeft}
 
 right :: TetrisState -> TetrisState
-right prevState@TetrisState {board, curPiece} = nextState
+right prevState@TetrisState {board, currentPiece} = nextState
   where
-    moveRight = over x (+ 1) curPiece
+    moveRight = over x (+ 1) currentPiece
     nextState =
       if hasOverlap board moveRight
         then prevState
-        else prevState {curPiece = moveRight}
+        else prevState {currentPiece = moveRight}
 
 rotate :: TetrisState -> TetrisState
-rotate prevState@TetrisState {board, curPiece} = nextState
+rotate prevState@TetrisState {board, currentPiece} = nextState
   where
-    rotated = over rotation rotateCw curPiece
+    rotated = over rotation rotateCw currentPiece
     nextState =
       if hasOverlap board rotated
         then prevState
-        else prevState {curPiece = rotated}
+        else prevState {currentPiece = rotated}
 
 drop :: TetrisState -> TetrisState
 drop state = droppedAfter
@@ -169,24 +180,21 @@ takeNextPiece :: TetrisState -> TetrisState
 takeNextPiece = generateNewPiece . fixCurrentPiece
 
 generateNewPiece :: TetrisState -> TetrisState
-generateNewPiece
-  state@TetrisState {seed, nextPiece, consumedPieceCount} =
-    newState
-    where
-      (newNextPiece :: Piece, newSeed) = random seed
-      newCurPiece :: BoardPiece = makeBoardPiece nextPiece 5 17 Zero
-      newState =
-        state
-          { curPiece = newCurPiece,
-            nextPiece = newNextPiece,
-            consumedPieceCount = consumedPieceCount + 1,
-            seed = newSeed
-          }
+generateNewPiece state@TetrisState {seed, nextPieces, consumedPieceCount} = newState
+  where
+    newState =
+      state
+        { currentPiece = newPiece,
+          nextPieces = remainingPieces,
+          consumedPieceCount = consumedPieceCount + 1
+        }
+    nextPiece : remainingPieces = nextPieces
+    newPiece :: BoardPiece = makeBoardPiece nextPiece 5 17 Zero
 
 fixCurrentPiece :: TetrisState -> TetrisState
-fixCurrentPiece state@TetrisState {board, score, curPiece} = newState
+fixCurrentPiece state@TetrisState {board, score, currentPiece} = newState
   where
-    BoardPiece {kind, blockXys} = curPiece
+    BoardPiece {kind, blockXys} = currentPiece
     block = getPieceBlock kind
     (newBoard, earnedScore) = commitBlocks board block blockXys
     newState =

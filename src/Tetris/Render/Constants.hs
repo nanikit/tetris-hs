@@ -1,6 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Tetris.Render.Constants where
 
 import Foreign.C.Types (CInt)

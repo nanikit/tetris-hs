@@ -1,7 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Tetris.Update.BoardPiece
   ( module Tetris.Update.Piece,
     module Tetris.Update.HalfPi,

@@ -1,93 +1,92 @@
 {-# LANGUAGE CPP #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 
 module Tetris
-  ( runTetris
-  ) where
+  ( runTetris,
+  )
+where
 
 import RIO as R
-    ( ($),
-      Eq((==), (/=)),
-      Integral(quot),
-      Monad(return),
-      Bool,
-      Maybe(..),
-      (.),
-      undefined,
-      lens,
-      view,
-      displayShow,
-      logInfo,
-      mkLogFunc,
-      runRIO,
-      MonadIO(..),
-      MonadReader(ask),
-      HasLogFunc(..),
-      LogFunc,
-      RIO,
-      MonadUnliftIO )
+  ( Bool,
+    Eq ((/=), (==)),
+    HasLogFunc (..),
+    Integral (quot),
+    LogFunc,
+    Maybe (..),
+    Monad (return),
+    MonadIO (..),
+    MonadReader (ask),
+    MonadUnliftIO,
+    RIO,
+    displayShow,
+    lens,
+    logInfo,
+    mkLogFunc,
+    runRIO,
+    undefined,
+    view,
+    when,
+    ($),
+    (.),
+  )
+import SDL qualified as S
+import SDL.Font qualified as F
 import System.Random
-import Tetris.Update
-    ( Command(Nop, Rotate, Drop),
-      HasTetrisState(..),
-      TetrisState(currentTick),
-      startNew )
 import Tetris.Render
-    ( HasDrawing(..), DrawingContext, initDrawingContext, render )
-import qualified SDL as S
-import qualified SDL.Font as F
-import qualified Tetris.Update as U
-import qualified Prelude
+  ( DrawingContext,
+    HasDrawing (..),
+    initDrawingContext,
+    render,
+  )
+import Tetris.Update
+  ( Command (Drop, Nop, Rotate),
+    HasTetrisState (..),
+    TetrisState (currentTick),
+    startNew,
+  )
+import Tetris.Update qualified as U
+import Prelude (putStrLn)
 
 data TetrisApp = TetrisApp
-  { logFunc :: LogFunc
-  , drawing :: DrawingContext
-  , state :: TetrisState
+  { logFunc :: LogFunc,
+    drawing :: DrawingContext,
+    state :: TetrisState
   }
 
 instance HasLogFunc TetrisApp where
-  logFuncL = lens getter setter where
-    getter = logFunc
-    setter app val = app { logFunc = val }
+  logFuncL = lens getter setter
+    where
+      getter = logFunc
+      setter app val = app {logFunc = val}
 
 instance HasDrawing TetrisApp where
-  drawingL = lens getter setter where
-    getter = drawing
-    setter app val = app { drawing = val }
+  drawingL = lens getter setter
+    where
+      getter = drawing
+      setter app val = app {drawing = val}
 
 instance HasTetrisState TetrisApp where
-  stateL = lens getter setter where
-    getter = state
-    setter app val = app { state = val }
+  stateL = lens getter setter
+    where
+      getter = state
+      setter app val = app {state = val}
 
 runTetris :: (MonadIO m, MonadUnliftIO m) => m ()
 runTetris = do
-  context <- initDrawingContext  
+  context <- initDrawingContext
   startTick <- S.ticks
   let initialGameState = startNew startTick
-#ifdef DEV
-  liftIO $ Prelude.putStrLn "dev"
-  logOptions <- logOptionsHandle stderr False
-  withLogFunc logOptions $ \lf -> do
-    let app = TetrisApp
-          { logFunc = lf
-          , state = initialGameState
-          , drawing = context
-          }
-    runRIO app eventLoop
-#else
-  liftIO $ Prelude.putStrLn "release"
+
+  liftIO $ putStrLn "release"
   let lf = mkLogFunc nopLogger
-      nopLogger _ _ _ _ = return () 
-      app = TetrisApp
-          { logFunc = lf
-          , state = initialGameState
-          , drawing = context
+      nopLogger _ _ _ _ = return ()
+      app =
+        TetrisApp
+          { logFunc = lf,
+            state = initialGameState,
+            drawing = context
           }
   runRIO app eventLoop
-#endif
+
   F.quit
   S.quit
 
@@ -98,32 +97,34 @@ eventLoop = do
   case event of
     Just event -> handleEvent event
     Nothing -> update Nop
-  
+
 handleEvent :: S.Event -> RIO TetrisApp ()
 handleEvent event = case S.eventPayload event of
   S.WindowClosedEvent _ -> return ()
-  S.KeyboardEvent{} -> do
+  S.KeyboardEvent {} -> do
     let cmd = getTetrisCommand event
     update cmd
   _ -> eventLoop
 
-update :: Command -> RIO TetrisApp()
+update :: Command -> RIO TetrisApp ()
 update cmd = do
   state <- view stateL
   app <- ask
   tick <- S.ticks
-  let curState = state{ currentTick = tick }
+  let curState = state {currentTick = tick}
       nextState = U.update curState cmd
-      newApp = app{ state = nextState }
-  if cmd /= Nop then logInfo (displayShow nextState) else return ()
+      newApp = app {state = nextState}
+  when (cmd /= Nop) $ logInfo (displayShow nextState)
   runRIO newApp eventLoop
 
 getTetrisCommand :: S.Event -> Command
-getTetrisCommand event = command where
-  command = case S.eventPayload event of
-    S.KeyboardEvent key | isPressEvent key ->
-      mapKeyToCommand (getKeyCode key)
-    _ -> Nop
+getTetrisCommand event = command
+  where
+    command = case S.eventPayload event of
+      S.KeyboardEvent key
+        | isPressEvent key ->
+            mapKeyToCommand (getKeyCode key)
+      _ -> Nop
 
 isPressEvent :: S.KeyboardEventData -> Bool
 isPressEvent ev = S.keyboardEventKeyMotion ev == S.Pressed

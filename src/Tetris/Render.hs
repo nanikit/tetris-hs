@@ -1,8 +1,3 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Tetris.Render
   ( DrawingContext,
     HasDrawing (..),
@@ -29,6 +24,7 @@ import RIO
     Word8,
     flip,
     fromIntegral,
+    fromMaybe,
     mapM_,
     uncurry,
     view,
@@ -36,6 +32,7 @@ import RIO
     (++),
     (.),
   )
+import RIO.List (headMaybe)
 import RIO.List.Partial ((!!))
 import RIO.Vector qualified as V
 import SDL as S
@@ -76,10 +73,10 @@ import Tetris.Update
     Board,
     BoardPiece (BoardPiece, blockXys, kind),
     HasTetrisState (..),
-    TetrisState (TetrisState, board, curPiece, nextPiece, score),
+    TetrisState (TetrisState, board, currentPiece, nextPieces, score),
   )
 import Tetris.Update.Piece
-  ( Piece,
+  ( Piece (O),
     getPieceBlock,
     getPieceOffsets,
   )
@@ -127,10 +124,10 @@ render :: (HasDrawing s, HasTetrisState s) => RIO s ()
 render = withBackBuffer $ do
   drawFrame
 
-  TetrisState {board, curPiece, nextPiece} <- view stateL
+  TetrisState {board, currentPiece, nextPieces} <- view stateL
   drawBoardBlocks board
-  drawCurrentPiece curPiece
-  drawNextPiece nextPiece
+  drawCurrentPiece currentPiece
+  drawNextPiece (fromMaybe O (headMaybe nextPieces))
 
   drawTexts
 

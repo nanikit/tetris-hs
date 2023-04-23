@@ -1,8 +1,5 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Tetris.Update.Piece
-  ( Piece,
+  ( Piece (..),
     getPieceBlock,
     getRotatedBlockOffsets,
     getPieceOffsets,

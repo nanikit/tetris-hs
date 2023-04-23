@@ -1,7 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-
 module Tetris.Update.Board
   ( Block (..),
     Board,
@@ -78,7 +74,7 @@ commit board block xys = V.modify setBlocks board
   where
     setBlocks :: (PrimMonad m) => MVector (PrimState m) (Vector Block) -> m ()
     setBlocks rows = forM_ xys $ \(x, y) -> do
-      row <- read rows y
+      row <- MV.read rows y
       let newRow = V.modify (commitCell x) row
       write rows y newRow
 
