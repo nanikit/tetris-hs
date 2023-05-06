@@ -80,6 +80,8 @@ import Tetris.Update.Piece
     getPieceBlock,
     getPieceOffsets,
   )
+import System.Info (os)
+import RIO.Prelude (error)
 
 data DrawingContext = DrawingContext
   { window :: Window,
@@ -110,7 +112,11 @@ initDrawingContext = do
         { rendererTargetTexture = True
         }
   backBuffer <- createTexture renderer RGBA8888 TextureAccessTarget windowSize
-  let loadMalgun = F.load "C:\\Windows\\Fonts\\malgun.ttf"
+  let face = case os of
+               "darwin" -> "/Library/Fonts/Arial Unicode.ttf"
+               "mingw32" -> "C:\\Windows\\Fonts\\malgun.ttf"
+               _ -> error "OSes other than windows and macos are not supported yet"
+  let loadMalgun = F.load face
   fonts <- mapM loadMalgun [30, 55, 70]
   return
     DrawingContext
