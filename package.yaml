@@ -63,13 +63,8 @@ executables:
     - tetris-hs
 
 tests:
-  tetris-hs-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+  spec:
+    defaults:            hspec/hspec@main
     dependencies:
     - tetris-hs
 

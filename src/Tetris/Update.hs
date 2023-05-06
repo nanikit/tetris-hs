@@ -1,6 +1,7 @@
 module Tetris.Update
   ( startNew,
     update,
+    drop,
     Command (..),
     TetrisState (..),
     HasTetrisState (..),
